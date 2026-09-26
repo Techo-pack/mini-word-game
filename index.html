@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mini Word Game</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        color: #222;
+    }
+
+    .game {
+        width: 420px;
+        max-width: 92%;
+        background: white;
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+        box-shadow: 0 15px 40px rgba(0,0,0,0.25);
+    }
+
+    h1 {
+        margin-top: 0;
+        color: #5b4bc4;
+    }
+
+    .info {
+        display: flex;
+        justify-content: space-between;
+        margin: 20px 0;
+        font-weight: bold;
+    }
+
+    .letters {
+        font-size: 34px;
+        letter-spacing: 10px;
+        font-weight: bold;
+        color: #5b4bc4;
+        margin: 25px 0;
+    }
+
+    input {
+        width: 100%;
+        padding: 14px;
+        font-size: 18px;
+        border: 2px solid #ddd;
+        border-radius: 10px;
+        outline: none;
+        text-align: center;
+    }
+
+    input:focus {
+        border-color: #667eea;
+    }
+
+    button {
+        border: none;
+        padding: 12px 20px;
+        margin: 8px 4px;
+        border-radius: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+
+    .submit {
+        background: #5b4bc4;
+        color: white;
+    }
+
+    .hint {
+        background: #ffd166;
+        color: #333;
+    }
+
+    .next {
+        background: #06d6a0;
+        color: white;
+    }
+
+    button:hover {
+        opacity: 0.85;
+        transform: scale(1.03);
+    }
+
+    #message {
+        min-height: 25px;
+        font-weight: bold;
+        margin: 15px;
+    }
+
+    .correct {
+        color: #06a77d;
+    }
+
+    .wrong {
+        color: #e63946;
+    }
+
+    .gameover {
+        display: none;
+    }
+
+    .restart {
+        background: #ef476f;
+        color: white;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <div id="gameArea">
+
+        <h1>🔤 Word Scramble</h1>
+
+        <p>Unscramble the letters to find the word!</p>
+
+        <div class="info">
+            <span>⭐ Score: <span id="score">0</span></span>
+            <span>⏱️ Time: <span id="time">30</span></span>
+        </div>
+
+        <div class="letters" id="letters"></div>
+
+        <p id="hintText">💡 Hint: Press the Hint button</p>
+
+        <input
+            type="text"
+            id="answer"
+            placeholder="Enter your answer..."
+            autocomplete="off"
+        >
+
+        <div>
+            <button class="submit" onclick="checkAnswer()">Check Answer</button>
+            <button class="hint" onclick="showHint()">💡 Hint</button>
+        </div>
+
+        <div id="message"></div>
+
+        <button class="next" onclick="nextWord()">➡️ Next Word</button>
+
+    </div>
+
+    <div class="gameover" id="gameOver">
+
+        <h1>🎉 Game Over!</h1>
+
+        <h2>Your Score</h2>
+
+        <div style="font-size:45px; color:#5b4bc4;">
+            <span id="finalScore">0</span>
+        </div>
+
+        <p>Great job! Try again and beat your score.</p>
+
+        <button class="restart" onclick="restartGame()">
+            🔄 Play Again
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+
+const words = [
+    {
+        word: "computer",
+        hint: "An electronic machine used to process information."
+    },
+    {
+        word: "internet",
+        hint: "A worldwide network connecting computers."
+    },
+    {
+        word: "keyboard",
+        hint: "You use this to type letters and numbers."
+    },
+    {
+        word: "teacher",
+        hint: "A person who helps students learn."
+    },
+    {
+        word: "student",
+        hint: "A person who studies at school or college."
+    },
+    {
+        word: "science",
+        hint: "The study of the natural world."
+    },
+    {
+        word: "program",
+        hint: "A set of instructions for a computer."
+    },
+    {
+        word: "website",
+        hint: "A collection of pages available on the internet."
+    },
+    {
+        word: "network",
+        hint: "A group of connected computers."
+    },
+    {
+        word: "database",
+        hint: "An organized collection of information."
+    }
+];
+
+let currentWord;
+let score = 0;
+let time = 30;
+let timer;
+let usedWords = [];
+
+function shuffle(word) {
+
+    let letters = word.split("");
+
+    for (let i = letters.length - 1; i > 0; i--) {
+
+        let j = Math.floor(Math.random() * (i + 1));
+
+        [letters[i], letters[j]] =
+        [letters[j], letters[i]];
+    }
+
+    return letters.join("");
+}
+
+function nextWord() {
+
+    clearInterval(timer);
+
+    if (usedWords.length === words.length) {
+        usedWords = [];
+    }
+
+    let available = words.filter(
+        item => !usedWords.includes(item.word)
+    );
+
+    currentWord =
+        available[Math.floor(Math.random() * available.length)];
+
+    usedWords.push(currentWord.word);
+
+    document.getElementById("letters").textContent =
+        shuffle(currentWord.word).toUpperCase();
+
+    document.getElementById("answer").value = "";
+
+    document.getElementById("hintText").textContent =
+        "💡 Hint: Press the Hint button";
+
+    document.getElementById("message").textContent = "";
+
+    time = 30;
+
+    document.getElementById("time").textContent = time;
+
+    document.getElementById("answer").focus();
+
+    timer = setInterval(() => {
+
+        time--;
+
+        document.getElementById("time").textContent = time;
+
+        if (time <= 0) {
+
+            clearInterval(timer);
+
+            document.getElementById("message").innerHTML =
+                "⏰ Time's up! The answer was <b>" +
+                currentWord.word.toUpperCase() +
+                "</b>";
+
+            document.getElementById("message").className = "wrong";
+        }
+
+    }, 1000);
+}
+
+function checkAnswer() {
+
+    let answer =
+        document.getElementById("answer")
+        .value
+        .trim()
+        .toLowerCase();
+
+    if (answer === "") {
+        return;
+    }
+
+    if (answer === currentWord.word) {
+
+        clearInterval(timer);
+
+        score += 10;
+
+        document.getElementById("score").textContent =
+            score;
+
+        document.getElementById("message").textContent =
+            "✅ Correct! +10 points";
+
+        document.getElementById("message").className =
+            "correct";
+
+    } else {
+
+        document.getElementById("message").textContent =
+            "❌ Incorrect! Try again.";
+
+        document.getElementById("message").className =
+            "wrong";
+    }
+}
+
+function showHint() {
+
+    document.getElementById("hintText").textContent =
+        "💡 " + currentWord.hint;
+
+    if (score > 0) {
+        score -= 2;
+
+        document.getElementById("score").textContent =
+            score;
+    }
+}
+
+function restartGame() {
+
+    score = 0;
+    usedWords = [];
+
+    document.getElementById("score").textContent =
+        score;
+
+    document.getElementById("gameOver").style.display =
+        "none";
+
+    document.getElementById("gameArea").style.display =
+        "block";
+
+    nextWord();
+}
+
+// Press Enter to check answer
+document.getElementById("answer").addEventListener(
+    "keydown",
+    function(event) {
+
+        if (event.key === "Enter") {
+            checkAnswer();
+        }
+
+    }
+);
+
+nextWord();
+
+</script>
+
+</body>
+</html>
